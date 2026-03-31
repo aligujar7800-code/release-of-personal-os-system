@@ -237,6 +237,14 @@ function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls) {
     ipcMain.handle('get-stats', () => {
         return db.getStats();
     });
+
+    ipcMain.handle('get-app-version', () => {
+        return controls.getAppVersion ? controls.getAppVersion() : null;
+    });
+
+    ipcMain.handle('get-update-status', () => {
+        return controls.getUpdateStatus ? controls.getUpdateStatus() : null;
+    });
 }
 
 module.exports = { setupIpcHandlers };

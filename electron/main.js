@@ -24,6 +24,12 @@ let appCollector = null;
 let windowTracker = null;
 let isTracking = true;
 let isQuitting = false;
+let updateStatus = {
+    state: 'idle',
+    currentVersion: app.getVersion(),
+    availableVersion: null,
+    lastCheckedAt: null,
+};
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -135,10 +141,21 @@ function setupAutoUpdater() {
     autoUpdater.autoInstallOnAppQuit = true;
 
     autoUpdater.on('error', (error) => {
+        updateStatus = {
+            ...updateStatus,
+            state: 'error',
+            lastCheckedAt: new Date().toISOString(),
+        };
         console.error('Auto-updater error:', error);
     });
 
     autoUpdater.on('update-available', async (info) => {
+        updateStatus = {
+            ...updateStatus,
+            state: 'update-available',
+            availableVersion: info.version || null,
+            lastCheckedAt: new Date().toISOString(),
+        };
         await dialog.showMessageBox({
             type: 'info',
             title: 'Update Available',
@@ -149,6 +166,12 @@ function setupAutoUpdater() {
     });
 
     autoUpdater.on('update-not-available', async () => {
+        updateStatus = {
+            ...updateStatus,
+            state: 'up-to-date',
+            availableVersion: null,
+            lastCheckedAt: new Date().toISOString(),
+        };
         await dialog.showMessageBox({
             type: 'info',
             title: 'Up To Date',
@@ -158,6 +181,12 @@ function setupAutoUpdater() {
     });
 
     autoUpdater.on('update-downloaded', async (info) => {
+        updateStatus = {
+            ...updateStatus,
+            state: 'update-downloaded',
+            availableVersion: info.version || null,
+            lastCheckedAt: new Date().toISOString(),
+        };
         const result = await dialog.showMessageBox({
             type: 'info',
             title: 'Update Ready',
@@ -174,6 +203,11 @@ function setupAutoUpdater() {
         }
     });
 
+    updateStatus = {
+        ...updateStatus,
+        state: 'checking',
+        lastCheckedAt: new Date().toISOString(),
+    };
     autoUpdater.checkForUpdates();
 }
 
@@ -224,7 +258,9 @@ app.whenReady().then(async () => {
                 tray.destroy();
                 tray = null;
             }
-        }
+        },
+        getAppVersion: () => app.getVersion(),
+        getUpdateStatus: () => updateStatus,
     });
 
     // Setup tray

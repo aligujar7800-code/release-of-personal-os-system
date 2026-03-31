@@ -1,6 +1,6 @@
 {
   "name": "personal-digital-memory-os",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "AI-powered personal digital memory system for your desktop",
   "main": "electron/main.js",
   "scripts": {

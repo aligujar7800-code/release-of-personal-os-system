@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     toggleTracking: () => ipcRenderer.invoke('toggle-tracking'),
     deleteHistory: (range) => ipcRenderer.invoke('delete-history', range),
     getStats: () => ipcRenderer.invoke('get-stats'),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
 
     // Window controls
     minimizeWindow: () => ipcRenderer.invoke('window-minimize'),

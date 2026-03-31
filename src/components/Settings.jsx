@@ -9,6 +9,8 @@ export default function Settings({ isTracking, setIsTracking, onStatsUpdate }) {
     });
     const [stats, setStats] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [appVersion, setAppVersion] = useState('Unknown');
+    const [updateInfo, setUpdateInfo] = useState(null);
 
     // Security State
     const [hasPassword, setHasPassword] = useState(false);
@@ -20,7 +22,31 @@ export default function Settings({ isTracking, setIsTracking, onStatsUpdate }) {
         loadSettings();
         loadStats();
         checkPasswordStatus();
+        loadVersionInfo();
     }, []);
+
+    async function loadVersionInfo() {
+        try {
+            if (window.electronAPI) {
+                const version = await window.electronAPI.getAppVersion();
+                const updaterStatus = await window.electronAPI.getUpdateStatus();
+                setAppVersion(version || 'Unknown');
+                setUpdateInfo(updaterStatus || null);
+            }
+        } catch (err) {
+            console.error('Version info load error:', err);
+        }
+    }
+
+    function getUpdateLabel() {
+        if (!updateInfo) return 'Update status unavailable';
+        if (updateInfo.state === 'checking') return 'Checking for updates...';
+        if (updateInfo.state === 'update-available') return `Update available: ${updateInfo.availableVersion || 'new version'}`;
+        if (updateInfo.state === 'update-downloaded') return `Update downloaded: ${updateInfo.availableVersion || 'new version'} (restart to install)`;
+        if (updateInfo.state === 'up-to-date') return 'You are on the latest release';
+        if (updateInfo.state === 'error') return 'Update check failed';
+        return 'Update status unavailable';
+    }
 
     async function checkPasswordStatus() {
         if (window.electronAPI) {
@@ -351,7 +377,13 @@ export default function Settings({ isTracking, setIsTracking, onStatsUpdate }) {
                     <div className="setting-row">
                         <div>
                             <div className="setting-label">Personal Digital Memory OS</div>
-                            <div className="setting-desc">Version 1.0.0 — AI-powered desktop memory system</div>
+                            <div className="setting-desc">Current version: {appVersion} — AI-powered desktop memory system</div>
+                        </div>
+                    </div>
+                    <div className="setting-row">
+                        <div>
+                            <div className="setting-label">Release Updates</div>
+                            <div className="setting-desc">{getUpdateLabel()}</div>
                         </div>
                     </div>
                     <div className="setting-row">
