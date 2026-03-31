@@ -7,7 +7,6 @@ import ScreenshotsViewer from './components/ScreenshotsViewer';
 import FilesExplorer from './components/FilesExplorer';
 import AssistantPanel from './components/AssistantPanel';
 import Settings from './components/Settings';
-import Login from './components/Login';
 
 const PAGES = {
     search: 'search',
@@ -22,34 +21,11 @@ export default function App() {
     const [currentPage, setCurrentPage] = useState(PAGES.search);
     const [isTracking, setIsTracking] = useState(true);
     const [stats, setStats] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
     useEffect(() => {
-        checkAuth();
         loadStats();
         loadTrackingState();
     }, []);
-
-    async function checkAuth() {
-        try {
-            if (window.electronAPI) {
-                const hasPassword = await window.electronAPI.hasPassword();
-                if (!hasPassword) {
-                    setIsAuthenticated(true);
-                }
-            } else {
-                // Dev fallback without backend
-                setIsAuthenticated(true);
-            }
-        } catch (err) {
-            console.error('Failed to check auth:', err);
-            // Default to safe side if DB fails
-            setIsAuthenticated(false);
-        } finally {
-            setIsCheckingAuth(false);
-        }
-    }
 
     async function loadStats() {
         try {
@@ -90,14 +66,6 @@ export default function App() {
             default:
                 return <SearchPage stats={stats} />;
         }
-    }
-
-    if (isCheckingAuth) {
-        return <div style={{ height: '100vh', width: '100vw', background: '#0a0a1a' }} />;
-    }
-
-    if (!isAuthenticated) {
-        return <Login onAuthenticated={() => setIsAuthenticated(true)} />;
     }
 
     return (

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <item>
-  <version>1.0.0</version>
-  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.0/Personal%20Digital%20Memory%20OS%20Setup%201.0.0.exe</url>
-  <changelog>Initial release</changelog>
+  <version>1.0.1</version>
+  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.1/Personal%20Digital%20Memory%20OS%20Setup%201.0.1.exe</url>
+  <changelog>Removed startup password prompt</changelog>
   <mandatory>false</mandatory>
 </item>
