@@ -1,0 +1,61 @@
+{
+  "name": "personal-digital-memory-os",
+  "version": "1.0.0",
+  "description": "AI-powered personal digital memory system for your desktop",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build && electron-builder",
+    "build:win": "vite build && electron-builder --win nsis",
+    "vite:dev": "vite",
+    "electron:dev": "electron .",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.3",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.344.0",
+    "node-cron": "^3.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.22.0",
+    "sql.js": "^1.10.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.0",
+    "vite": "^5.1.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.memoryos.app",
+    "productName": "Personal Digital Memory OS",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "python-service",
+        "to": "python-service"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "aligujar7800-code",
+      "repo": "release-of-personal-os-system"
+    }
+  }
+}

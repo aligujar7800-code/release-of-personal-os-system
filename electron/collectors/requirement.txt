@@ -1,0 +1,7 @@
+sentence-transformers
+torch
+transformers
+faiss-cpu
+flask
+pillow
+flask-cors

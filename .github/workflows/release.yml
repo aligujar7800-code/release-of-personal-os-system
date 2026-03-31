@@ -1,0 +1,78 @@
+name: Build and Release Desktop App
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Electron app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win
+
+      - name: Generate update metadata files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path updates -Force | Out-Null
+
+          $version = "${{ github.ref_name }}" -replace "^v", ""
+          $repo = "${{ github.repository }}"
+          $encodedName = [uri]::EscapeDataString("Personal Digital Memory OS Setup $version.exe")
+          $downloadUrl = "https://github.com/$repo/releases/download/v$version/$encodedName"
+          $publishedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+          $versionJson = @{
+            version = $version
+            notes = "Release v$version"
+            pub_date = $publishedAt
+            platforms = @{
+              "windows-x64" = @{
+                url = $downloadUrl
+              }
+            }
+          } | ConvertTo-Json -Depth 5
+
+          Set-Content -Path "updates/version.json" -Value $versionJson -Encoding UTF8
+
+          $updateXml = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <item>
+            <version>$version</version>
+            <url>$downloadUrl</url>
+            <changelog>Release v$version</changelog>
+            <mandatory>false</mandatory>
+          </item>
+          "@
+
+          Set-Content -Path "updates/update.xml" -Value $updateXml -Encoding UTF8
+
+      - name: Create GitHub release and upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-electron/*.exe
+            dist-electron/*.blockmap
+            dist-electron/latest*.yml
+            updates/version.json
+            updates/update.xml

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+python-service/venv/
+python-service/__pycache__/
+python-service/*.pyc
+data/
+*.db
+*.db-journal
+.env
+screenshots/
+faiss_index/
