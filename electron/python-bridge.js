@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
+const fs = require('fs');
 
 class PythonBridge {
     constructor(dataPath) {
@@ -13,16 +14,43 @@ class PythonBridge {
 
     async start() {
         return new Promise((resolve, reject) => {
-            const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
-            const servicePath = path.join(__dirname, '..', 'python-service', 'app.py');
+            const serviceDir = process.env.NODE_ENV === 'development' || !process.resourcesPath || !process.mainModule?.filename.includes('app.asar')
+                ? path.join(__dirname, '..', 'python-service')
+                : path.join(process.resourcesPath, 'python-service');
+            const servicePath = path.join(serviceDir, 'app.py');
+
+            // Prefer bundled Python (if present), then fall back to system Python.
+            const pythonCandidates = process.platform === 'win32'
+                ? [
+                    path.join(serviceDir, 'venv', 'Scripts', 'python.exe'),
+                    'python',
+                    'py',
+                ]
+                : [
+                    path.join(serviceDir, 'venv', 'bin', 'python3'),
+                    path.join(serviceDir, 'venv', 'bin', 'python'),
+                    'python3',
+                    'python',
+                ];
+            const pythonPath = pythonCandidates.find((candidate) => {
+                if (candidate.includes(path.sep)) return fs.existsSync(candidate);
+                return true;
+            });
+
+            if (!fs.existsSync(servicePath)) {
+                return reject(new Error(`AI service file missing: ${servicePath}`));
+            }
 
             console.log(`🐍 Python service start ho raha hai: ${servicePath}`);
+            console.log(`🐍 Python executable: ${pythonPath}`);
 
             this.process = spawn(pythonPath, [servicePath], {
+                cwd: serviceDir,
                 env: {
                     ...process.env,
                     MEMORY_DATA_PATH: this.dataPath,
                     FLASK_PORT: String(this.port),
+                    PYTHONUNBUFFERED: '1',
                 },
                 stdio: ['pipe', 'pipe', 'pipe'],
             });

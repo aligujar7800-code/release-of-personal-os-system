@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <item>
-  <version>1.0.3</version>
-  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.3/Personal%20Digital%20Memory%20OS%20Setup%201.0.3.exe</url>
-  <changelog>Show current and latest release status in About section</changelog>
+  <version>1.0.4</version>
+  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.4/Personal%20Digital%20Memory%20OS%20Setup%201.0.4.exe</url>
+  <changelog>Fix packaged AI service startup path and Python resolution</changelog>
   <mandatory>false</mandatory>
 </item>
