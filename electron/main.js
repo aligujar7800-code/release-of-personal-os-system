@@ -143,7 +143,16 @@ function setupAutoUpdater() {
             type: 'info',
             title: 'Update Available',
             message: `Version ${info.version} is available.`,
-            detail: 'The update is downloading in the background and will install automatically when ready.',
+            detail: 'The update is downloading in the background.',
+            buttons: ['OK']
+        });
+    });
+
+    autoUpdater.on('update-not-available', async () => {
+        await dialog.showMessageBox({
+            type: 'info',
+            title: 'Up To Date',
+            message: 'You already have the latest version.',
             buttons: ['OK']
         });
     });
