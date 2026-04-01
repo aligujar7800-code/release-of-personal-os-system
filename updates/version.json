@@ -1,10 +1,10 @@
 {
-  "version": "1.0.5",
-  "notes": "Fix AI startup delay by loading embedding model asynchronously",
+  "version": "1.0.6",
+  "notes": "Retry AI warmup automatically before assistant/search fallback",
   "pub_date": "2026-03-31T00:00:00Z",
   "platforms": {
     "windows-x64": {
-      "url": "https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.5/Personal%20Digital%20Memory%20OS%20Setup%201.0.5.exe"
+      "url": "https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.6/Personal%20Digital%20Memory%20OS%20Setup%201.0.6.exe"
     }
   }
 }

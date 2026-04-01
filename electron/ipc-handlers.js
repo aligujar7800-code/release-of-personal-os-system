@@ -17,7 +17,13 @@ function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls) {
             // Always start with DB keyword search (fast, reliable)
             const dbResults = db.searchActivities(query);
 
-            // If Python AI is running, try semantic search too and merge results
+            // If Python AI is running (or becomes ready shortly), try semantic search and merge results.
+            if (pythonBridge) {
+                if (!pythonBridge.isRunning()) {
+                    await pythonBridge.waitUntilReady(5);
+                }
+            }
+
             if (pythonBridge && pythonBridge.isRunning()) {
                 try {
                     const searchResponse = await pythonBridge.search(query);
@@ -178,8 +184,16 @@ function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls) {
     // AI Assistant
     ipcMain.handle('ask-assistant', async (_, question) => {
         try {
-            if (!pythonBridge || !pythonBridge.isRunning()) {
-                return { answer: 'AI service is not available. Please wait for it to start.', sources: [] };
+            if (!pythonBridge) {
+                return { answer: 'AI service is not available right now.', sources: [] };
+            }
+
+            // Give the Python service time to finish warm-up in packaged builds.
+            if (!pythonBridge.isRunning()) {
+                const ready = await pythonBridge.waitUntilReady(15);
+                if (!ready) {
+                    return { answer: 'AI service is still starting. Please try again in a few seconds.', sources: [] };
+                }
             }
             const response = await pythonBridge.askAssistant(question);
             return response;
