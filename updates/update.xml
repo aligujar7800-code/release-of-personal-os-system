@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <item>
-  <version>1.0.4</version>
-  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.4/Personal%20Digital%20Memory%20OS%20Setup%201.0.4.exe</url>
-  <changelog>Fix packaged AI service startup path and Python resolution</changelog>
+  <version>1.0.5</version>
+  <url>https://github.com/aligujar7800-code/release-of-personal-os-system/releases/download/v1.0.5/Personal%20Digital%20Memory%20OS%20Setup%201.0.5.exe</url>
+  <changelog>Fix AI startup delay by loading embedding model asynchronously</changelog>
   <mandatory>false</mandatory>
 </item>

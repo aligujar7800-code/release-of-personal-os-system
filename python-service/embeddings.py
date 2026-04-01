@@ -5,6 +5,8 @@ Generates semantic embeddings for text content.
 
 import logging
 import numpy as np
+import threading
+import hashlib
 
 logger = logging.getLogger('MemoryOS-AI.embeddings')
 
@@ -14,25 +16,46 @@ class EmbeddingEngine:
         self.model_name = model_name
         self.model = None
         self.dimension = 384
-        self._load_model()
+        self._loading = False
+        self._load_failed = False
+        self._load_model_async()
 
-    def _load_model(self):
-        """Load the sentence transformer model."""
-        try:
-            from sentence_transformers import SentenceTransformer
-            logger.info(f'Loading model: {self.model_name}')
-            self.model = SentenceTransformer(self.model_name)
-            self.dimension = self.model.get_sentence_embedding_dimension()
-            logger.info(f'✅ Model loaded. Dimension: {self.dimension}')
-        except Exception as e:
-            logger.error(f'❌ Failed to load model: {e}')
-            logger.warning('Using random embeddings as fallback')
-            self.model = None
+    def _load_model_async(self):
+        """Load transformer model in background so API starts quickly."""
+        self._loading = True
+
+        def _worker():
+            try:
+                from sentence_transformers import SentenceTransformer
+                logger.info(f'Loading model in background: {self.model_name}')
+                model = SentenceTransformer(self.model_name)
+                self.model = model
+                self.dimension = model.get_sentence_embedding_dimension()
+                logger.info(f'✅ Model loaded. Dimension: {self.dimension}')
+            except Exception as e:
+                self._load_failed = True
+                logger.error(f'❌ Failed to load model: {e}')
+                logger.warning('Using deterministic fallback embeddings')
+            finally:
+                self._loading = False
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _fallback_embedding(self, text: str):
+        """Deterministic embedding fallback when model is unavailable."""
+        digest = hashlib.sha256(text.encode('utf-8', errors='ignore')).digest()
+        seed = int.from_bytes(digest[:8], byteorder='little', signed=False)
+        rng = np.random.default_rng(seed)
+        vec = rng.standard_normal(self.dimension).astype(np.float32)
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec = vec / norm
+        return vec
 
     def encode(self, text: str):
         """Single text ka embedding generate karo - numpy array return karta hai."""
         if self.model is None:
-            return np.random.randn(self.dimension).astype(np.float32)
+            return self._fallback_embedding(text)
 
         # Bohot lamba text truncate karo
         if len(text) > 10000:
@@ -45,7 +68,7 @@ class EmbeddingEngine:
     def encode_batch(self, texts: list, batch_size=32):
         """Multiple texts ka embedding ek saath generate karo."""
         if self.model is None:
-            return [np.random.randn(self.dimension).astype(np.float32) for _ in texts]
+            return np.array([self._fallback_embedding(t) for t in texts], dtype=np.float32)
 
         # Lamba text truncate karo
         texts = [t[:10000] if len(t) > 10000 else t for t in texts]
