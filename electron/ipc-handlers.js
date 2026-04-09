@@ -2,7 +2,7 @@ const { shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls) {
+function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls, glmService) {
     // Window controls
     ipcMain.handle('window-minimize', () => mainWindow?.minimize());
     ipcMain.handle('window-maximize', () => {
@@ -184,19 +184,64 @@ function setupIpcHandlers(ipcMain, db, pythonBridge, mainWindow, controls) {
     // AI Assistant
     ipcMain.handle('ask-assistant', async (_, question) => {
         try {
-            if (!pythonBridge) {
-                return { answer: 'AI service is not available right now.', sources: [] };
+            // 1. Get chronological context if relevant (Rule-based)
+            let ruleSummary = '';
+            const questionLower = question.toLowerCase();
+            
+            // Try to get context from Python only if it's running
+            let searchResults = [];
+            if (pythonBridge && pythonBridge.isRunning()) {
+                if (questionLower.includes('yesterday') || questionLower.includes('today') || questionLower.includes('week')) {
+                    const response = await pythonBridge.askAssistant(question).catch(() => null);
+                    if (response) ruleSummary = response.answer || '';
+                }
+                const searchResponse = await pythonBridge.search(question).catch(() => []);
+                searchResults = Array.isArray(searchResponse) ? searchResponse : searchResponse?.results || [];
             }
 
-            // Give the Python service time to finish warm-up in packaged builds.
-            if (!pythonBridge.isRunning()) {
-                const ready = await pythonBridge.waitUntilReady(15);
-                if (!ready) {
-                    return { answer: 'AI service is still starting. Please try again in a few seconds.', sources: [] };
-                }
+            // 2. Build Context
+            let context = '';
+            if (ruleSummary) {
+                context += `Summary of activity:\n${ruleSummary}\n\n`;
             }
-            const response = await pythonBridge.askAssistant(question);
-            return response;
+            
+            if (searchResults.length > 0) {
+                context += `Relevant Memory Fragments:\n`;
+                searchResults.slice(0, 5).forEach((hit) => {
+                    context += `- [Source: ${hit.source_type}] ${hit.text}\n`;
+                });
+            }
+
+            // 3. Fallback/Supplement with basic DB search (always available)
+            const dbResults = db.searchActivities(question);
+            if (dbResults.length > 0) {
+                context += `\nRecent Activity/Files found in DB:\n`;
+                dbResults.slice(0, 8).forEach(r => {
+                    context += `- ${r.title || r.type}: ${r.description || r.content || ''}\n`;
+                });
+            }
+
+            // 4. Generate LLM response using GLM-5.1
+            if (glmService && context) {
+                const aiResponse = await glmService.generateResponse(question, context);
+                return {
+                    answer: aiResponse.answer,
+                    sources: searchResults.slice(0, 5),
+                    model: aiResponse.model
+                };
+            }
+
+            // Absolute fallback for basic questions if no context
+            if (glmService) {
+                const aiResponse = await glmService.generateResponse(question, "Ask general question. No local context available yet.");
+                return {
+                    answer: aiResponse.answer,
+                    sources: [],
+                    model: aiResponse.model
+                };
+            }
+
+            return { answer: 'I am still initializing and couldn\'t find context to help with that.', sources: [] };
         } catch (err) {
             console.error('Assistant error:', err);
             return { answer: 'Sorry, I encountered an error processing your question.', sources: [] };

@@ -11,6 +11,7 @@ const { ClipboardMonitor } = require('./collectors/clipboard-monitor');
 const { ScreenshotCapture } = require('./collectors/screenshot-capture');
 const { AppCollector } = require('./collectors/app-collector');
 const { WindowTracker } = require('./collectors/window-tracker');
+const { GLMService } = require('./glm-ai');
 
 let mainWindow = null;
 let tray = null;
@@ -22,6 +23,7 @@ let clipboardMonitor = null;
 let screenshotCapture = null;
 let appCollector = null;
 let windowTracker = null;
+let glmService = null;
 let isTracking = true;
 let isQuitting = false;
 let updateStatus = {
@@ -122,6 +124,13 @@ async function initializeServices() {
     screenshotCapture = new ScreenshotCapture(db, dataPath, pythonBridge);
     appCollector = new AppCollector(db);
     windowTracker = new WindowTracker(db);
+
+    // Initialize GLM AI Service (Securely from DB or Env)
+    const hfToken = db.getSetting('hf_token') || process.env.HF_TOKEN;
+    if (!hfToken) {
+        console.warn('⚠️ HF_TOKEN missing. Assistant may not function.');
+    }
+    glmService = new GLMService(hfToken);
 
     // Start tracking if enabled
     const settings = db.getSetting('tracking_enabled');
@@ -261,7 +270,7 @@ app.whenReady().then(async () => {
         },
         getAppVersion: () => app.getVersion(),
         getUpdateStatus: () => updateStatus,
-    });
+    }, glmService);
 
     // Setup tray
     if (!isSpyMode) {
